@@ -1,9 +1,10 @@
 package main
 
 import (
+	"io"
 	"net/http"
+	"text/template"
 
-	"github.com/k0kubun/pp"
 	"github.com/labstack/echo"
 	"github.com/labstack/echo/engine/standard"
 )
@@ -11,12 +12,26 @@ import (
 // this is a sample code on https://github.com/labstack/echo
 func main() {
 	e := echo.New() // HTTPサーバーのハンドリング、Contextの生成、パラメータ処理、ルーティングの処理 etc
-	e.GET("/:name", showHello)
+
+	t := &Template{
+		templates: template.Must(template.ParseGlob("public/views/*.html")),
+	}
+	e.SetRenderer(t)
+
+	e.GET("/", showHello)
 	e.Run(standard.New(":1323"))
 }
 
 func showHello(c echo.Context) error {
-	name := c.Param("name")
-	pp.Print(c)
-	return c.String(http.StatusOK, "Hello, World! "+name)
+	return c.Render(http.StatusOK, "hello", "World")
+}
+
+// Template difinition
+type Template struct {
+	templates *template.Template
+}
+
+// Render renderings template name of parameter
+func (t *Template) Render(w io.Writer, name string, data interface{}, c echo.Context) error {
+	return t.templates.ExecuteTemplate(w, name, data)
 }
