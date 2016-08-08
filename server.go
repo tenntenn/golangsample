@@ -23,7 +23,10 @@ func main() {
 }
 
 func showHello(c echo.Context) error {
-	return c.Render(http.StatusOK, "hello", "World")
+	return c.Render(http.StatusOK, "hello", map[string]string{
+		"world":  "World",
+		"myName": "John",
+	})
 }
 
 // Template difinition
