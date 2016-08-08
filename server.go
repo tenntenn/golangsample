@@ -3,6 +3,7 @@ package main
 import (
 	"net/http"
 
+	"github.com/k0kubun/pp"
 	"github.com/labstack/echo"
 	"github.com/labstack/echo/engine/standard"
 )
@@ -16,5 +17,6 @@ func main() {
 
 func showHello(c echo.Context) error {
 	name := c.Param("name")
+	pp.Print(c)
 	return c.String(http.StatusOK, "Hello, World! "+name)
 }
