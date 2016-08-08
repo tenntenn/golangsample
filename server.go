@@ -7,6 +7,7 @@ import (
 
 	"github.com/labstack/echo"
 	"github.com/labstack/echo/engine/standard"
+	"github.com/labstack/echo/middleware"
 )
 
 // this is a sample code on https://github.com/labstack/echo
@@ -17,6 +18,8 @@ func main() {
 		templates: template.Must(template.ParseGlob("public/views/*.html")),
 	}
 	e.SetRenderer(t)
+
+	e.Use(middleware.Logger()) // $ go get github.com/dgrijalva/jwt-go
 
 	e.GET("/", showHello)
 	e.Run(standard.New(":1323"))
