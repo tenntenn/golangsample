@@ -3,11 +3,13 @@ package main
 import (
 	"io"
 	"net/http"
+	"strconv"
 	"text/template"
 
 	"github.com/labstack/echo"
 	"github.com/labstack/echo/engine/standard"
 	"github.com/labstack/echo/middleware"
+	"golangsample/library/resource"
 )
 
 // this is a sample code on https://github.com/labstack/echo
@@ -36,11 +38,33 @@ func add(c echo.Context) error {
 
 func show(c echo.Context) error {
 	id := c.Param("id")
-	_ = id
+
+	db := resource.UseDB(c)
+
+	row, err := db.Query("select * from books where id = ?", id)
+	if err != nil {
+		c.String(http.StatusInternalServerError, "cant execute sql: "+err.Error())
+		return nil
+	}
+	defer row.Close()
+
+	type Book struct {
+		id      int
+		title   string
+		created []uint8
+	}
+	book := Book{}
+
+	for row.Next() {
+		if err := row.Scan(&book.id, &book.title, &book.created); err != nil {
+			c.String(http.StatusInternalServerError, "cant execute sql: "+err.Error())
+			return nil
+		}
+	}
 
 	return c.Render(http.StatusOK, "books/show", map[string]string{
-		"world":  "World",
-		"myName": "John",
+		"id":    strconv.Itoa(book.id),
+		"title": book.title,
 	})
 }
 
