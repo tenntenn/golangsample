@@ -10,6 +10,7 @@ import (
 	"github.com/labstack/echo/engine/standard"
 	"github.com/labstack/echo/middleware"
 	"golangsample/library/resource"
+	"golangsample/model"
 )
 
 // this is a sample code on https://github.com/labstack/echo
@@ -23,16 +24,35 @@ func main() {
 
 	e.Use(middleware.Logger()) // $ go get github.com/dgrijalva/jwt-go
 
-	e.GET("/books/new", add)
+	e.GET("/books", list)
 	e.GET("/books/:id", show)
+	e.GET("/books/new", add)
 
 	e.Run(standard.New(":1234"))
 }
 
-func add(c echo.Context) error {
-	return c.Render(http.StatusOK, "books/add", map[string]string{
-		"world":  "World",
-		"myName": "John",
+func list(c echo.Context) error {
+	db := resource.UseDB(c)
+
+	row, err := db.Query("select * from books")
+	if err != nil {
+		c.String(http.StatusInternalServerError, "cant execute sql: "+err.Error())
+		return nil
+	}
+	defer row.Close()
+
+	books := []model.Book{}
+	for row.Next() {
+		book := model.Book{}
+		if err := row.Scan(&book.ID, &book.Title, &book.Created); err != nil {
+			c.String(http.StatusInternalServerError, "cant execute sql: "+err.Error())
+			return nil
+		}
+		books = append(books, book)
+	}
+
+	return c.Render(http.StatusOK, "books/list", map[string]interface{}{
+		"books": books,
 	})
 }
 
@@ -48,23 +68,24 @@ func show(c echo.Context) error {
 	}
 	defer row.Close()
 
-	type Book struct {
-		id      int
-		title   string
-		created []uint8
-	}
-	book := Book{}
-
+	book := model.Book{}
 	for row.Next() {
-		if err := row.Scan(&book.id, &book.title, &book.created); err != nil {
+		if err := row.Scan(&book.ID, &book.Title, &book.Created); err != nil {
 			c.String(http.StatusInternalServerError, "cant execute sql: "+err.Error())
 			return nil
 		}
 	}
 
 	return c.Render(http.StatusOK, "books/show", map[string]string{
-		"id":    strconv.Itoa(book.id),
-		"title": book.title,
+		"id":    strconv.Itoa(book.ID),
+		"title": book.Title,
+	})
+}
+
+func add(c echo.Context) error {
+	return c.Render(http.StatusOK, "books/add", map[string]string{
+		"world":  "World",
+		"myName": "John",
 	})
 }
 
